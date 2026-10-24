@@ -15,6 +15,16 @@ npm run dev        # http://localhost:5173/charlie/
 `PLACEHOLDER`), set `WEB3FORMS_ACCESS_KEY`, set `DRY_RUN: false`, run `npm run og` if you changed
 palette or texts, then push to `main`.
 
+![Step 1 on desktop: the question over the painted meadow](docs/desktop-question.png)
+
+<p>
+  <img src="docs/iphone-2-when.png" width="32%" alt="Step 2 on iPhone: calendar, time chips and proposals">
+  <img src="docs/iphone-3-what.png" width="32%" alt="Step 3 on iPhone: activity cards">
+  <img src="docs/iphone-5-done.png" width="32%" alt="Success screen on iPhone">
+</p>
+
+Screenshots come from `SCREENSHOTS=1 npm run test:e2e -- screenshots` (`test-results/screens/`).
+
 ---
 
 ## Architecture
