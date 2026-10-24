@@ -11,7 +11,11 @@ export interface Fx {
   dissolve(el: HTMLElement): void;
   /** Accent pixels and a few hearts bursting out of `el`. */
   burst(el: HTMLElement): void;
+  /** Accent colors for later bursts (theme switch). */
+  setAccent(accent: Accent): void;
 }
+
+type Accent = { rose: string; roseInk: string; blush: string; bg: string };
 
 interface Bit {
   x: number;
@@ -26,13 +30,10 @@ interface Bit {
 
 const CSS_PIXEL = 3;
 
-export function createFx(
-  canvas: HTMLCanvasElement,
-  accent: { rose: string; roseInk: string; blush: string; bg: string },
-): Fx {
+export function createFx(canvas: HTMLCanvasElement, accent: Accent): Fx {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas unavailable');
-  const heart = heartFrame(rgba(accent.rose), rgba(accent.blush), rgba(accent.bg));
+  let heart = heartFrame(rgba(accent.rose), rgba(accent.blush), rgba(accent.bg));
   const bits: Bit[] = [];
   const hearts: Heart[] = [];
   let grid: PixelGrid | null = null;
@@ -162,6 +163,11 @@ export function createFx(
       spawnHearts(hearts, cx, r.y, 4, Math.random);
       for (const h of hearts) h.rise = 30 + Math.random() * 20;
       run();
+    },
+
+    setAccent(next) {
+      accent = next;
+      heart = heartFrame(rgba(accent.rose), rgba(accent.blush), rgba(accent.bg));
     },
   };
 }

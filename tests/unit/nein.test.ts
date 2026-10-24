@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PROXIMITY, pickSpot } from '../../src/steps/nein';
 
-const viewport = { w: 1440, h: 900 };
+/** The painting, in viewport coordinates. */
+const stage = { left: 24, top: 88, right: 1416, bottom: 876 };
 const size = { w: 104, h: 52 };
 const ja = { left: 200, top: 400, right: 320, bottom: 460 };
 const headline = { left: 200, top: 220, right: 800, bottom: 370 };
@@ -14,10 +15,10 @@ function seeded(seed: number) {
 }
 
 describe('pickSpot', () => {
-  it('stays inside the viewport, off protected rects, away from the pointer', () => {
+  it('stays inside the painting, off protected rects, away from the pointer', () => {
     const pointer = { x: 380, y: 430 };
     for (let s = 1; s < 200; s++) {
-      const spot = pickSpot(viewport, size, pointer, [ja, headline], seeded(s));
+      const spot = pickSpot(stage, size, pointer, [ja, headline], seeded(s));
       expect(spot).not.toBeNull();
       const box = {
         left: spot!.x,
@@ -25,10 +26,10 @@ describe('pickSpot', () => {
         right: spot!.x + size.w,
         bottom: spot!.y + size.h,
       };
-      expect(box.left).toBeGreaterThanOrEqual(0);
-      expect(box.top).toBeGreaterThanOrEqual(0);
-      expect(box.right).toBeLessThanOrEqual(viewport.w);
-      expect(box.bottom).toBeLessThanOrEqual(viewport.h);
+      expect(box.left).toBeGreaterThanOrEqual(stage.left);
+      expect(box.top).toBeGreaterThanOrEqual(stage.top);
+      expect(box.right).toBeLessThanOrEqual(stage.right);
+      expect(box.bottom).toBeLessThanOrEqual(stage.bottom);
       for (const p of [ja, headline]) {
         const overlap =
           box.left < p.right && box.right > p.left && box.top < p.bottom && box.bottom > p.top;
@@ -40,7 +41,8 @@ describe('pickSpot', () => {
     }
   });
 
-  it('gives up when the viewport cannot hold the button', () => {
-    expect(pickSpot({ w: 100, h: 60 }, size, { x: 0, y: 0 }, [])).toBeNull();
+  it('gives up when the painting cannot hold the button', () => {
+    const strip = { left: 24, top: 88, right: 1416, bottom: 148 };
+    expect(pickSpot(strip, size, { x: 0, y: 0 }, [])).toBeNull();
   });
 });

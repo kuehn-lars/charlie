@@ -15,8 +15,7 @@ import type { World } from '../src/scene/actor';
 import { createCat } from '../src/scene/animals/cat';
 import { createDog } from '../src/scene/animals/dog';
 import { createLewin } from '../src/scene/animals/lewin';
-import { buildBackdrop, drawParticles } from '../src/scene/backdrop';
-import { rgba } from '../src/scene/sprite';
+import { backdropColors, buildBackdrop, drawParticles } from '../src/scene/backdrop';
 
 const W = 1200;
 const H = 630;
@@ -52,16 +51,9 @@ function png(width: number, height: number, rgbaBytes: Uint8Array): Buffer {
 }
 
 function sceneDataUrl(): string {
-  const p = config.palette;
   const w = FW / PIXEL;
   const h = Math.ceil(FH / PIXEL);
-  const backdrop = buildBackdrop(w, h, {
-    bg: rgba(p.bg),
-    rose: rgba(p.rose),
-    blush: rgba(p.blush),
-    sage: rgba(p.sage),
-    sageDeep: rgba(p.sageDeep),
-  });
+  const backdrop = buildBackdrop(w, h, backdropColors(config.palette));
   const buf = backdrop.base.slice();
   drawParticles(backdrop.particles, buf, w, h);
   const world: World = {

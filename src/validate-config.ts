@@ -97,8 +97,18 @@ export function validateConfig(cfg: Config, today: string): string[] {
     warn(`SITE_URL "${cfg.SITE_URL}" is not an absolute URL.`);
   }
 
-  for (const [name, value] of Object.entries({ ...cfg.palette, ...cfg.horse })) {
-    if (!HEX_RE.test(value)) warn(`Color ${name}: "${value}" is not #RRGGBB.`);
+  const colors = { palette: cfg.palette, paletteDark: cfg.paletteDark, horse: cfg.horse };
+  for (const [group, values] of Object.entries(colors)) {
+    for (const [name, value] of Object.entries(values)) {
+      for (const c of [value as string | readonly string[]].flat()) {
+        if (!HEX_RE.test(c)) warn(`Color ${group}.${name}: "${c}" is not #RRGGBB.`);
+      }
+    }
+  }
+  for (const [group, p] of Object.entries({ palette: cfg.palette, paletteDark: cfg.paletteDark })) {
+    for (const key of ['sky', 'sun', 'clouds', 'hills', 'meadow'] as const) {
+      if (p[key].length < 2) warn(`${group}.${key} needs at least 2 colors.`);
+    }
   }
 
   return warnings;

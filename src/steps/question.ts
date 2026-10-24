@@ -10,6 +10,7 @@ export function questionStep(app: App): View {
   const t = config.texts.question;
   const headline = h('h1', { class: 'display', tabindex: -1 }, accent(t.headline));
   const quip = h('p', { class: 'quip', 'aria-live': 'polite' });
+  const eyebrow = h('p', { class: 'eyebrow' }, t.eyebrow);
   const yes = h('button', { type: 'button', class: 'btn btn-primary btn-lg btn-yes' }, t.yes);
   const no = h(
     'button',
@@ -17,15 +18,13 @@ export function questionStep(app: App): View {
     t.no,
   );
 
-  const grow = () => {
-    const n = app.store.get().neinCount;
-    yes.style.setProperty('--scale', String(Math.min(GROW_MAX, 1 + n * GROW_PER_ESCAPE)));
-  };
-  grow();
+  // Ja grows with this visit's escapes only; a reload starts it at normal size.
+  let escapes = 0;
 
   const detach = attachNein({
     button: no,
-    protect: () => [yes, headline],
+    area: () => document.querySelector('.stage')!,
+    protect: () => [yes, headline, eyebrow, quip],
     focusTarget: () => yes,
     reducedMotion: app.reducedMotion,
     dissolve: (el) => app.fx?.dissolve(el),
@@ -33,7 +32,8 @@ export function questionStep(app: App): View {
       const neinCount = app.store.get().neinCount + 1;
       app.store.set({ neinCount });
       quip.textContent = t.escapes[(neinCount - 1) % t.escapes.length] ?? '';
-      grow();
+      escapes++;
+      yes.style.setProperty('--scale', String(Math.min(GROW_MAX, 1 + escapes * GROW_PER_ESCAPE)));
     },
   });
 
@@ -54,7 +54,7 @@ export function questionStep(app: App): View {
   const el = h(
     'div',
     { class: 'step hero' },
-    h('p', { class: 'eyebrow' }, t.eyebrow),
+    eyebrow,
     headline,
     h('div', { class: 'answer' }, yes, no),
     quip,

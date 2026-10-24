@@ -4,11 +4,12 @@ import { createCat } from './animals/cat';
 import { createDog } from './animals/dog';
 import { createLewin } from './animals/lewin';
 import {
+  backdropColors,
   buildBackdrop,
   drawParticles,
   stepParticles,
+  stepTwinkle,
   type Backdrop,
-  type BackdropColors,
 } from './backdrop';
 import { heartFade, heartFrame, spawnHearts, stepHearts, type Heart } from './heart';
 import { applyGrid, pixelGrid, type PixelGrid } from './pixels';
@@ -25,6 +26,8 @@ export interface Scene {
   celebrate(): void;
   /** Success screen: keep celebrating at a relaxed pace. */
   setHappy(on: boolean): void;
+  /** Repaints the backdrop in another palette (theme switch). */
+  setPalette(palette: Palette): void;
 }
 
 /** CSS px per scene pixel. Desktop gets chunkier pixels so sprites read at distance. */
@@ -39,15 +42,10 @@ type MutableWorld = { -readonly [K in keyof World]: World[K] };
 export function createScene(canvas: HTMLCanvasElement, opts: SceneOptions): Scene {
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('2D canvas unavailable');
-  const p = opts.palette;
-  const colors: BackdropColors = {
-    bg: rgba(p.bg),
-    rose: rgba(p.rose),
-    blush: rgba(p.blush),
-    sage: rgba(p.sage),
-    sageDeep: rgba(p.sageDeep),
-  };
-  const heart = heartFrame(rgba(p.rose), rgba(p.blush), rgba(p.bg));
+  let palette = opts.palette;
+  let colors = backdropColors(palette);
+  const heartFor = (p: Palette) => heartFrame(rgba(p.rose), rgba(p.blush), rgba(p.bg));
+  let heart = heartFor(opts.palette);
   const hearts: Heart[] = [];
 
   const world: MutableWorld = {
@@ -113,6 +111,7 @@ export function createScene(canvas: HTMLCanvasElement, opts: SceneOptions): Scen
   function render() {
     if (!backdrop || !image || !grid) return;
     buf.set(backdrop.base);
+    if (!opts.reducedMotion) stepTwinkle(backdrop, performance.now() / 1000);
     drawParticles(backdrop.particles, buf, grid.w, grid.h);
     // Back lane first.
     for (const a of [...actors].sort((x, y) => x.spec.lane - y.spec.lane))
@@ -198,6 +197,14 @@ export function createScene(canvas: HTMLCanvasElement, opts: SceneOptions): Scen
     },
     setHappy(on) {
       world.happy = on;
+    },
+    setPalette(next) {
+      if (next === palette) return;
+      palette = next;
+      colors = backdropColors(palette);
+      heart = heartFor(palette);
+      grid = null; // force a rebuild
+      resize();
     },
   };
 }

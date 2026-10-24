@@ -5,9 +5,10 @@
  *
  * - mouse: when the cursor comes within PROXIMITY px (and is nearer to Nein
  *   than to Ja, so reaching for Ja never counts), the button jumps to a random
- *   spot inside the viewport, away from the cursor, never overlapping the
- *   protected elements (Ja, headline). While in flight it is click-through.
- * - touch / pen: on pointerdown it dissolves into pixels and is gone.
+ *   spot inside the painting (`area`), away from the cursor, never overlapping
+ *   the protected elements. While in flight it is click-through.
+ * - touch / pen: on pointerdown it sheds a puff of pixels and jumps away,
+ *   so it stays visible and can be chased again.
  * - keyboard / assistive tech: focusing it makes it escape and hands focus to
  *   Ja; any activation is swallowed.
  *
@@ -24,6 +25,8 @@ const COOLDOWN_MS = 350;
 
 export interface NeinOptions {
   button: HTMLButtonElement;
+  /** Where the button may run (the painting); clipped to the viewport. */
+  area: () => Element;
   /** Elements the button must never cover. */
   protect: () => readonly Element[];
   /** Where focus goes when the button is focused. */
@@ -57,24 +60,26 @@ function distanceToRect(x: number, y: number, r: Rect): number {
 }
 
 /**
- * Picks a top-left position for a `w x h` box inside the viewport that
- * avoids `protect` and is as far as practical from the pointer. Exported for
- * unit tests.
+ * Picks a top-left position for a `w x h` box inside `bounds` that avoids
+ * `protect` and is as far as practical from the pointer. Exported for unit
+ * tests.
  */
 export function pickSpot(
-  viewport: { w: number; h: number },
+  bounds: Rect,
   size: { w: number; h: number },
   pointer: { x: number; y: number },
   protect: readonly Rect[],
   random: () => number = Math.random,
 ): { x: number; y: number } | null {
-  const maxX = viewport.w - size.w - EDGE;
-  const maxY = viewport.h - size.h - EDGE;
-  if (maxX < EDGE || maxY < EDGE) return null;
+  const minX = bounds.left + EDGE;
+  const minY = bounds.top + EDGE;
+  const maxX = bounds.right - size.w - EDGE;
+  const maxY = bounds.bottom - size.h - EDGE;
+  if (maxX < minX || maxY < minY) return null;
   let best: { x: number; y: number; d: number } | null = null;
   for (let i = 0; i < 60; i++) {
-    const x = EDGE + random() * (maxX - EDGE);
-    const y = EDGE + random() * (maxY - EDGE);
+    const x = minX + random() * (maxX - minX);
+    const y = minY + random() * (maxY - minY);
     const box = { left: x, top: y, right: x + size.w, bottom: y + size.h };
     if (protect.some((p) => overlaps(box, p))) continue;
     const d = distanceToRect(pointer.x, pointer.y, box);
@@ -93,15 +98,23 @@ export function attachNein(opts: NeinOptions): () => void {
 
   let lastEscape = -Infinity;
 
-  function escape(from: { x: number; y: number }) {
+  /** The painting, clipped to the viewport (the button is position: fixed). */
+  const bounds = (): Rect => {
+    const a = opts.area().getBoundingClientRect();
+    return {
+      left: Math.max(0, a.left),
+      top: Math.max(0, a.top),
+      right: Math.min(document.documentElement.clientWidth, a.right),
+      bottom: Math.min(window.innerHeight, a.bottom),
+    };
+  };
+
+  function escape(from: { x: number; y: number }, puff = false) {
     // One escape per approach: ignore triggers while the button is in flight.
     if (gone || performance.now() - lastEscape < COOLDOWN_MS) return;
     lastEscape = performance.now();
     opts.onEscape();
-    if (opts.reducedMotion) {
-      vanish(false);
-      return;
-    }
+    if (puff && !opts.reducedMotion) opts.dissolve(button);
     const rect = button.getBoundingClientRect();
     if (!escaped) {
       // Re-parent to <body> so position: fixed is relative to the viewport
@@ -113,13 +126,13 @@ export function attachNein(opts: NeinOptions): () => void {
       document.body.append(button);
     }
     const spot = pickSpot(
-      { w: document.documentElement.clientWidth, h: window.innerHeight },
+      bounds(),
       { w: rect.width, h: rect.height },
       from,
       opts.protect().map((el) => inflate(el.getBoundingClientRect(), KEEP_CLEAR)),
     );
     if (!spot) {
-      vanish(false); // Viewport too cramped to run anywhere: just leave.
+      vanish(); // Painting too cramped to run anywhere: just leave.
       return;
     }
     // Click-through while flying, so a fast click lands behind it, not on it.
@@ -134,10 +147,9 @@ export function attachNein(opts: NeinOptions): () => void {
     });
   }
 
-  function vanish(dissolve: boolean) {
+  function vanish() {
     if (gone) return;
     gone = true;
-    if (dissolve && !opts.reducedMotion) opts.dissolve(button);
     if (document.activeElement === button) opts.focusTarget().focus();
     button.style.visibility = 'hidden';
     button.setAttribute('aria-hidden', 'true');
@@ -155,12 +167,7 @@ export function attachNein(opts: NeinOptions): () => void {
 
   const onDown = (e: PointerEvent) => {
     e.preventDefault(); // no focus, no compat mouse events
-    if (e.pointerType === 'mouse') {
-      escape({ x: e.clientX, y: e.clientY });
-    } else {
-      opts.onEscape();
-      vanish(true);
-    }
+    escape({ x: e.clientX, y: e.clientY }, e.pointerType !== 'mouse');
   };
 
   // Suppresses the click a tap would synthesize.
@@ -189,7 +196,8 @@ export function attachNein(opts: NeinOptions): () => void {
   const onResize = () => {
     if (!escaped || gone) return;
     const r = button.getBoundingClientRect();
-    if (r.right > window.innerWidth || r.bottom > window.innerHeight)
+    const b = bounds();
+    if (r.left < b.left || r.top < b.top || r.right > b.right || r.bottom > b.bottom)
       escape({ x: r.left, y: r.top });
   };
 

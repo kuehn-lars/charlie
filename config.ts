@@ -10,7 +10,7 @@
  * - Calendar days are 'YYYY-MM-DD' strings, interpreted in Europe/Berlin.
  * - Times are 'HH:MM', 24h.
  * - Weekdays are ISO numbers: 1 = Monday ... 7 = Sunday.
- * - Colors are '#RRGGBB'.
+ * - Colors are '#RRGGBB'. Color lists are dithered stop to stop.
  *
  * In dev (`npm run dev`) the config is validated at startup; problems are
  * logged to the browser console as `[config]` warnings.
@@ -79,13 +79,28 @@ export interface Palette {
   grid: Hex;
   /** The accent. Dither, focus rings, highlight borders. */
   rose: Hex;
-  /** Accent for text and filled buttons (white text on it must be >= 4.5:1). */
+  /** Accent for text (>= 4.5:1 against `bg`) and filled buttons. */
   roseInk: Hex;
+  /** Text on `roseInk` buttons (>= 4.5:1). */
+  onAccent: Hex;
   /** Dither partner of `rose`. */
   blush: Hex;
-  /** Meadow light / dark dither pair. */
-  sage: Hex;
-  sageDeep: Hex;
+
+  // The painting. Each list is dithered stop to stop.
+  /** Sky, top to horizon. */
+  sky: readonly Hex[];
+  /** Sun (or moon), core to rim; the last stops also paint the halo rings. */
+  sun: readonly Hex[];
+  /** Brush-stroke clouds: highlight, body, shadow. */
+  clouds: readonly Hex[];
+  /** Distant hills: far, near. */
+  hills: readonly Hex[];
+  /** Meadow, horizon to front. */
+  meadow: readonly Hex[];
+  /** Flower dabs in the meadow. */
+  blooms: readonly Hex[];
+  /** Twinkling specks above the horizon (stars, glints). Empty for none. */
+  sparkles: readonly Hex[];
 }
 
 export interface HorseColors {
@@ -109,6 +124,8 @@ export interface Texts {
   stepAnnouncement: (step: number, total: number, title: string) => string;
   back: string;
   next: string;
+  /** Label of the dark mode switch. */
+  darkMode: string;
 
   question: {
     title: string;
@@ -190,7 +207,10 @@ export interface Config {
   /** When true, the payload is logged to the console instead of being sent. */
   DRY_RUN: boolean;
 
+  /** Light theme. */
   palette: Palette;
+  /** Dark theme, used when the system prefers dark or the switch says so. */
+  paletteDark: Palette;
   horse: HorseColors;
 
   /** First selectable day. Default: today (Europe/Berlin). */
@@ -222,19 +242,48 @@ export const config: Config = {
   WEB3FORMS_ACCESS_KEY: 'YOUR_ACCESS_KEY',
   DRY_RUN: true,
 
+  // Golden hour: periwinkle sky melting into apricot, a ringed sun, lilac hills.
   palette: {
-    bg: '#FBF6F3',
-    surface: '#FFFCFB',
-    ink: '#1F1A1C',
-    muted: '#766B70',
-    faint: '#A2979C',
-    border: '#E9DFDC',
-    grid: '#F1E8E5',
-    rose: '#E8638C',
-    roseInk: '#C8436E',
-    blush: '#F7C6D3',
-    sage: '#8FB89A',
-    sageDeep: '#5E8A6B',
+    bg: '#FFF3EA',
+    surface: '#FFFAF6',
+    ink: '#2B1533',
+    muted: '#7A5A6E',
+    faint: '#B39AAA',
+    border: '#F1D8CE',
+    grid: '#F8E6DD',
+    rose: '#FF4F7B',
+    roseInk: '#D42E62',
+    onAccent: '#FFFAF6',
+    blush: '#FFC2D1',
+    sky: ['#9FB2FF', '#C5B6FA', '#F2BDE0', '#FFC9C2', '#FFD6A5', '#FFB37D'],
+    sun: ['#FFFBE6', '#FFE680', '#FFC24B', '#FF8A5B', '#FF4F7B', '#E33D8F'],
+    clouds: ['#FFF4F8', '#F7A8CB', '#B999F0'],
+    hills: ['#B59CEB', '#8E7FD9'],
+    meadow: ['#C6EB7A', '#7FD27E', '#3BAA72', '#1E7C64', '#14524F'],
+    blooms: ['#FF4F7B', '#FFD84D', '#FFFFFF', '#7FC8FF', '#C17CFF'],
+    sparkles: ['#FFFFFF', '#FFF2A8'],
+  },
+
+  // Starry night: indigo swirls, a golden ringed moon, fireflies in the grass.
+  paletteDark: {
+    bg: '#120E24',
+    surface: '#1B1533',
+    ink: '#F7EEF6',
+    muted: '#B4A4C6',
+    faint: '#6E6189',
+    border: '#2F2752',
+    grid: '#211A3D',
+    rose: '#FF6B9A',
+    roseInk: '#FF7EAA',
+    onAccent: '#1A0B1F',
+    blush: '#5C2A5E',
+    sky: ['#0A0A26', '#141A52', '#22307A', '#3D2F86', '#7A3489', '#C9477A'],
+    sun: ['#FFFCE8', '#FFF0A3', '#FFD45C', '#F7A541', '#E8673C', '#B9367A'],
+    clouds: ['#BFD7FF', '#5E7FE6', '#2C3A9E'],
+    hills: ['#2B2068', '#1B1A4A'],
+    meadow: ['#3E8F7A', '#2A6B66', '#1B4D55', '#123546', '#0A2033'],
+    blooms: ['#FF7EAA', '#FFD84D', '#9FE8FF', '#E9FF6A', '#C9A2FF'],
+    sparkles: ['#FFFFFF', '#FFF3B0', '#9FE8FF'],
   },
 
   horse: {
@@ -244,7 +293,7 @@ export const config: Config = {
     points: '#2A1D1A',
     blaze: '#F3ECE6',
     muzzle: '#3B2B27',
-    halter: '#E8638C',
+    halter: '#FF4F7B',
   },
 
   // -------------------------------------------------------------------------
@@ -301,6 +350,7 @@ export const config: Config = {
     stepAnnouncement: (step, total, title) => `Schritt ${step} von ${total}: ${title}`,
     back: 'Zurück',
     next: 'Weiter',
+    darkMode: 'Dunkler Modus',
 
     question: {
       title: 'Die Frage',

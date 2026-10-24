@@ -24,7 +24,8 @@ config.ts                 everything personal: names, texts, palette, schedule, 
 index.html                static shell; <head> is completed at build time (vite.config.ts)
 vite.config.ts            base path from SITE_URL, head injection (meta, OG, palette vars, font preload)
 src/
-  main.ts                 boot: store, scene, fx, step router, focus + aria-live announcements
+  main.ts                 boot: store, scene, fx, theme switch, step router, focus + aria-live
+  theme.ts                light/dark: system preference until switched, then remembered
   state.ts                typed store, defensive restore, localStorage persistence
   dates.ts                calendar-day arithmetic on 'YYYY-MM-DD', Berlin wall clock, de-DE formatting
   schedule.ts             day availability (bounds, blocked, highlighted) and slot set operations
@@ -66,6 +67,11 @@ below it, with a sticky footer carrying the primary action. Resumed sessions set
 `html[data-boot]` in an inline pre-paint script so the first paint already has the right stage
 height (CLS 0 on cold and resumed loads).
 
+**Theme** (`theme.ts`): the same pre-paint script sets `html[data-theme]` from the stored switch
+choice or `prefers-color-scheme`, so dark mode never flashes light. Until the switch in the top
+bar is used, the page follows system changes live; afterwards the choice is stored. A change
+repaints the scene and FX canvases in the other palette.
+
 ---
 
 ## Scene engine
@@ -88,13 +94,20 @@ height (CLS 0 on cold and resumed loads).
 Generated once per resize, deterministic (ordered dither + hashed noise, no `Math.random`), so
 resizes never flicker:
 
-- **Sun**: disc whose 8×8 Bayer threshold falls from a dense checker at the top to a sparse grid
-  at the bottom (image 1). Its placement interpolates continuously between hero (large, resting
-  on the horizon) and strip (small cap peeking over the meadow), so the stage can animate.
-- **Grain halo**: blush/rose white noise with a smoothstep falloff around the sun.
-- **Meadow**: two-tone sage dither getting denser downwards, rolling horizon, grass blades.
+A painting in ordered dither: every surface picks between two neighboring stops of a palette
+list (`sky`, `sun`, `meadow`, …) with an 8×8 Bayer threshold.
 
-Every inked pixel of these is a **particle** (struct-of-arrays typed arrays): a spring-damper pulls
+- **Sky** (static): a vertical ramp sampled through three swirls and a sine flow, so the bands
+  bend like Van Gogh brush strokes; warmed around the sun; short color dabs follow the swirl.
+- **Halo** (static): wobbling concentric rings in the sun's outer colors.
+- **Hills** (static): two silhouettes the sun sets behind.
+- **Sun**: ringed disc, core to rim. Its placement interpolates continuously between hero (large,
+  resting on the horizon) and strip (small cap peeking over the meadow), so the stage can animate.
+- **Clouds**: stacks of tapered brush strokes, highlight on top, shadow below.
+- **Meadow**: banded stripes with blade streaks and flower dabs, rolling horizon, grass blades.
+- **Sparkles**: stars (with crosses for the bright ones) and some flowers twinkle.
+
+Every pixel of the non-static layers is a **particle** (struct-of-arrays typed arrays): a spring-damper pulls
 it home, the pointer pushes it away within an 11 px radius. Settled particles cost one branch.
 
 ### Sprite format (`sprite.ts`)
@@ -179,41 +192,43 @@ input):
 
 - **Mouse**: on `pointermove` within 100 px (and nearer to Nein than to Ja, so reaching for Ja
   never counts), it is re-parented to `<body>` (so `position: fixed` is viewport-relative inside
-  animated ancestors) and jumps via `translate` to a spot from `pickSpot`: inside the viewport
-  with a 16 px margin, not overlapping Ja or the headline (inflated 12 px), ≥ 220 px from the
+  animated ancestors) and jumps via `translate` to a spot from `pickSpot`: inside the painting
+  (the stage, clipped to the viewport) with a 16 px margin, not overlapping Ja, the headline, the
+  eyebrow or the quip (inflated 12 px), ≥ 220 px from the
   cursor when possible. It is click-through during the 350 ms flight; a cooldown counts one
   attempt per approach.
-- **Touch / pen**: `pointerdown` → `preventDefault`, dissolve into pixels, hidden for good.
+- **Touch / pen**: `pointerdown` → `preventDefault`, a puff of pixels stays behind and the button
+  jumps to a new spot (same `pickSpot` as the mouse), so it can be chased forever.
   `touchend` is prevented so no synthetic click is generated.
 - **Keyboard / AT**: focus → escape and focus moves to Ja; Enter/Space are swallowed.
 - **Everything**: a capture-phase `click` listener on `window` cancels any click targeting it.
-- Reduced motion: it simply hides.
+- Reduced motion: no flight and no pixel puff; it reappears at the new spot instantly.
 
 Each escape increments `neinCount` (persisted, reported in the email) and scales Ja by 3.5 %
-(max 1.35, `transform` only).
+(max 1.35, `transform` only). The scale counts this page view's escapes only, so a reload resets Ja.
 
 ---
 
 ## config.ts reference
 
-| Key                          | Type                                                         | Purpose                                                                                   |
-| ---------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `names.her` / `me` / `horse` | string                                                       | Used in texts.                                                                            |
-| `SITE_URL`                   | absolute URL, trailing `/`                                   | OG/Twitter absolute URLs; its **path is the Vite `base`** (must be `/<repo>/`).           |
-| `WEB3FORMS_ACCESS_KEY`       | string                                                       | Public by design. Placeholder `YOUR_ACCESS_KEY`.                                          |
-| `DRY_RUN`                    | boolean                                                      | Log the payload to the console instead of sending.                                        |
-| `palette`                    | `Palette`                                                    | UI + scene colors, injected as CSS custom properties at build (`--rose-ink`, …).          |
-| `horse`                      | `HorseColors`                                                | Lewin's coat, highlight, shade, points, blaze, muzzle, halter.                            |
-| `minDate` / `maxDate`        | `'YYYY-MM-DD'`?                                              | Default today / today + 3 months. `minDate` never undercuts today.                        |
-| `blockedDates`               | `{date, reason?}` \| `{from, to, reason?}`                   | Inclusive ranges; hatched, focusable, reason shown on hover/focus/tap.                    |
-| `highlightedDates`           | `{date, label}`                                              | Accent styling, label in the panel and legend.                                            |
-| `blockedWeekdays`            | ISO weekday numbers (1 = Mon)                                | Never selectable.                                                                         |
-| `timePresets`                | `'HH:MM'[]`                                                  | Chips per day; plus "Andere Uhrzeit" (custom input, 5 min steps).                         |
-| `maxSlots`                   | positive int                                                 | Max date+time proposals.                                                                  |
-| `activities`                 | `Activity[]`                                                 | `{ id, title, description, icon, recommended?, badge? }`. Ids are persisted: never reuse. |
-| `activities[].icon`          | `'pot' \| 'sushi' \| 'bowling' \| 'dice' \| 'heart'` or rows | Custom icon: 16 rows of `#` ink, `+` accent, `o` blush, `.` transparent.                  |
-| `allowMultiple`              | boolean                                                      | Radio vs. checkbox cards.                                                                 |
-| `texts`                      | `Texts`                                                      | Every visible string. `*word*` renders a word in the accent color (headlines).            |
+| Key                          | Type                                                         | Purpose                                                                                      |
+| ---------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `names.her` / `me` / `horse` | string                                                       | Used in texts.                                                                               |
+| `SITE_URL`                   | absolute URL, trailing `/`                                   | OG/Twitter absolute URLs; its **path is the Vite `base`** (must be `/<repo>/`).              |
+| `WEB3FORMS_ACCESS_KEY`       | string                                                       | Public by design. Placeholder `YOUR_ACCESS_KEY`.                                             |
+| `DRY_RUN`                    | boolean                                                      | Log the payload to the console instead of sending.                                           |
+| `palette` / `paletteDark`    | `Palette`                                                    | Light / dark UI + scene colors, injected as CSS custom properties (`--rose-ink`, `--sky-0`). |
+| `horse`                      | `HorseColors`                                                | Lewin's coat, highlight, shade, points, blaze, muzzle, halter.                               |
+| `minDate` / `maxDate`        | `'YYYY-MM-DD'`?                                              | Default today / today + 3 months. `minDate` never undercuts today.                           |
+| `blockedDates`               | `{date, reason?}` \| `{from, to, reason?}`                   | Inclusive ranges; hatched, focusable, reason shown on hover/focus/tap.                       |
+| `highlightedDates`           | `{date, label}`                                              | Accent styling, label in the panel and legend.                                               |
+| `blockedWeekdays`            | ISO weekday numbers (1 = Mon)                                | Never selectable.                                                                            |
+| `timePresets`                | `'HH:MM'[]`                                                  | Chips per day; plus "Andere Uhrzeit" (custom input, 5 min steps).                            |
+| `maxSlots`                   | positive int                                                 | Max date+time proposals.                                                                     |
+| `activities`                 | `Activity[]`                                                 | `{ id, title, description, icon, recommended?, badge? }`. Ids are persisted: never reuse.    |
+| `activities[].icon`          | `'pot' \| 'sushi' \| 'bowling' \| 'dice' \| 'heart'` or rows | Custom icon: 16 rows of `#` ink, `+` accent, `o` blush, `.` transparent.                     |
+| `allowMultiple`              | boolean                                                      | Radio vs. checkbox cards.                                                                    |
+| `texts`                      | `Texts`                                                      | Every visible string. `*word*` renders a word in the accent color (headlines).               |
 
 `validateConfig` (dev only, console `[config]` warnings, unit-tested) flags: invalid dates, inverted
 ranges, min > max, days both blocked and highlighted (blocked wins), duplicate highlights, bad

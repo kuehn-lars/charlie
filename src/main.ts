@@ -11,6 +11,7 @@ import { noteStep } from './steps/note';
 import { questionStep } from './steps/question';
 import { whatStep } from './steps/what';
 import { whenStep } from './steps/when';
+import { currentTheme, initTheme } from './theme';
 import { validateConfig } from './validate-config';
 
 declare global {
@@ -48,14 +49,16 @@ function tryCreate<T>(make: () => T): T | null {
   }
 }
 
+// The head script has already picked the theme; paint the canvases in it from the start.
+const palette = currentTheme() === 'dark' ? config.paletteDark : config.palette;
 const scene: Scene | null = tryCreate(() =>
   createScene(byId('scene') as HTMLCanvasElement, {
-    palette: config.palette,
+    palette,
     horse: config.horse,
     reducedMotion,
   }),
 );
-const fx: Fx | null = tryCreate(() => createFx(byId('fx') as HTMLCanvasElement, config.palette));
+const fx: Fx | null = tryCreate(() => createFx(byId('fx') as HTMLCanvasElement, palette));
 
 const store = createStore();
 const app: App = {
@@ -75,6 +78,20 @@ const app: App = {
 
 byId('brand').append(pixelIcon(GLYPHS.heart, 14), config.texts.brand);
 
+const themeSwitch = byId('theme-switch');
+themeSwitch.setAttribute('aria-label', config.texts.darkMode);
+byId('theme-knob').append(pixelIcon(GLYPHS.sun, 12), pixelIcon(GLYPHS.moon, 12));
+const setTheme = initTheme((theme) => {
+  const p = theme === 'dark' ? config.paletteDark : config.palette;
+  themeSwitch.setAttribute('aria-checked', String(theme === 'dark'));
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.bg);
+  scene?.setPalette(p);
+  fx?.setAccent(p);
+});
+themeSwitch.addEventListener('click', () => {
+  setTheme(themeSwitch.getAttribute('aria-checked') === 'true' ? 'light' : 'dark');
+});
+
 const bar = h('span', { class: 'progress-bar' });
 const counter = h('span');
 progress.append(counter, bar);
@@ -88,6 +105,7 @@ function renderProgress(step: Step) {
 
 let current: View | null = null;
 let token = 0;
+let morphTimer = 0;
 
 async function show(step: Step, initial: boolean) {
   const mine = ++token;
@@ -102,6 +120,14 @@ async function show(step: Step, initial: boolean) {
   const view = STEPS[step](app);
   current = view;
   const hero = step === 1 || step === 5;
+  if (!initial && hero !== main.hasAttribute('data-hero')) {
+    // Let the stage height animate for this change only, not for resizes.
+    main.dataset.morph = '';
+    window.clearTimeout(morphTimer);
+    morphTimer = window.setTimeout(() => {
+      delete main.dataset.morph;
+    }, 950);
+  }
   main.toggleAttribute('data-hero', hero);
   main.dataset.step = String(step);
   main.dataset.ready = '';

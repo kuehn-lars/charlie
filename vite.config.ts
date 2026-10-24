@@ -1,6 +1,7 @@
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite';
-import { config } from './config';
+import { config, type Palette } from './config';
 import { STORAGE_KEY } from './src/state';
+import { THEME_KEY } from './src/theme';
 
 /**
  * The Vite base is the path of SITE_URL ('/charlie/' for
@@ -11,9 +12,17 @@ const base = new URL(config.SITE_URL).pathname;
 
 const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
+/** Palette as CSS custom properties; color lists become --sky-0, --sky-1, ... */
+const cssVars = (palette: Palette) =>
+  Object.entries(palette)
+    .flatMap(([k, v]) =>
+      Array.isArray(v) ? v.map((c, i) => `--${kebab(k)}-${i}:${c}`) : [`--${kebab(k)}:${v}`],
+    )
+    .join(';');
+
 /** Injects everything config-driven into <head> at build (and dev) time. */
 function headInject(): Plugin {
-  const { texts, palette, SITE_URL } = config;
+  const { texts, palette, paletteDark, SITE_URL } = config;
   const ogImage = new URL('og.png', SITE_URL).href;
   const meta = (attrs: Record<string, string>): HtmlTagDescriptor => ({
     tag: 'meta',
@@ -44,16 +53,19 @@ function headInject(): Plugin {
           meta({ name: 'twitter:image', content: ogImage }),
           {
             tag: 'style',
-            children: `:root{${Object.entries(palette)
-              .map(([k, v]) => `--${kebab(k)}:${v}`)
-              .join(';')}}`,
+            // Explicit choice wins; without JS the system preference decides.
+            children:
+              `:root{color-scheme:light;${cssVars(palette)}}` +
+              `:root[data-theme=dark]{color-scheme:dark;${cssVars(paletteDark)}}` +
+              `@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;${cssVars(paletteDark)}}}`,
             injectTo: 'head',
           },
           {
             // Apply the resumed step before first paint so the stage height
-            // does not jump when the app boots on step 2-4.
+            // does not jump when the app boots on step 2-4. Same for the theme,
+            // so dark mode never flashes light.
             tag: 'script',
-            children: `try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})||'{}').step;if(s>1&&s<5)document.documentElement.dataset.boot=String(s)}catch(e){}`,
+            children: `var d=document.documentElement;try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})||'{}').step;if(s>1&&s<5)d.dataset.boot=String(s)}catch(e){}try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)})}catch(e){}d.dataset.theme=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'`,
             injectTo: 'head',
           },
         ];

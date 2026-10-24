@@ -1,5 +1,6 @@
 /*
- * Für Charlie. Colors come from config.ts (injected as --tokens at build).
+ * Für Charlie. Colors come from config.ts (injected as --tokens at build,
+ * light and dark; lists become --sky-0, --sky-1, ...).
  * Shape system: containers 16px, inner cards 12px, calendar cells 10px,
  * every button and chip is a pill.
  */
@@ -33,8 +34,8 @@
   --topbar: 56px;
   --gutter: 12px;
   --stage-strip: 152px;
-  --stage-hero: max(560px, calc(100dvh - var(--topbar) - var(--gutter) * 2));
-  --on-accent: #fffcfb;
+  /* svh, not dvh: the hero must not resize while Safari's toolbar slides. */
+  --stage-hero: max(560px, calc(100svh - var(--topbar) - var(--gutter) * 2));
   --hatch: repeating-linear-gradient(
     -45deg,
     transparent 0 4px,
@@ -47,7 +48,7 @@
     --gutter: 24px;
     --topbar: 64px;
     --stage-strip: 184px;
-    --stage-hero: clamp(600px, calc(100dvh - var(--topbar) - var(--gutter) * 2), 820px);
+    --stage-hero: clamp(600px, calc(100svh - var(--topbar) - var(--gutter) * 2), 820px);
   }
 }
 
@@ -67,7 +68,20 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--bg);
+  /* A wash of the painting's light spilling onto the page. */
+  background:
+    radial-gradient(
+      ellipse 70% 50% at 85% 0%,
+      color-mix(in srgb, var(--sky-1) 30%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 60% 45% at 0% 100%,
+      color-mix(in srgb, var(--sun-3) 16%, transparent),
+      transparent
+    ),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--ink);
   font: 400 16px/1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
@@ -145,6 +159,7 @@ textarea {
 
 .topbar {
   position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -152,6 +167,9 @@ textarea {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Solid paper behind the bar, edge to edge: the wash starts below it and the
+   bar matches theme-color (the browser chrome above it). */
+.topbar::before,
 .topbar::after {
   content: '';
   position: absolute;
@@ -161,6 +179,13 @@ textarea {
   height: 1px;
   background: var(--grid);
   transform: translateX(-50%);
+}
+
+.topbar::before {
+  top: 0;
+  height: auto;
+  z-index: -1;
+  background: var(--bg);
 }
 
 .brand {
@@ -175,6 +200,89 @@ textarea {
 .brand svg {
   width: 14px;
   height: 12px;
+}
+
+.topbar-end {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Dark mode switch: a tiny sky with the sun or moon as knob. */
+.theme-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, var(--muted));
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--sky-1), var(--sky-4));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.2s;
+}
+
+.theme-switch::before {
+  /* Two pixel stars, only at night. */
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 10px;
+  width: 2px;
+  height: 2px;
+  background: var(--sparkles-0, #fff);
+  box-shadow:
+    8px 7px 0 var(--sparkles-1, #fff),
+    -3px 10px 0 var(--sparkles-0, #fff);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.theme-switch:hover {
+  border-color: color-mix(in srgb, var(--border) 50%, var(--muted));
+}
+
+.theme-switch:active .theme-knob {
+  scale: 0.9;
+}
+
+.theme-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--sun-3);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--sky-0) 60%, transparent);
+  transition:
+    translate 0.45s var(--ease-out),
+    scale 0.2s var(--ease-out);
+}
+
+.theme-knob svg {
+  grid-area: 1 / 1;
+  transition:
+    opacity 0.3s,
+    rotate 0.45s var(--ease-out);
+}
+
+.theme-switch[aria-checked='true']::before {
+  opacity: 1;
+}
+
+.theme-switch[aria-checked='true'] .theme-knob {
+  translate: 24px 0;
+  color: var(--sun-2);
+}
+
+.theme-switch[aria-checked='true'] .theme-knob svg:first-child,
+.theme-switch:not([aria-checked='true']) .theme-knob svg:last-child {
+  opacity: 0;
+  rotate: -90deg;
 }
 
 .progress {
@@ -221,9 +329,13 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--bg);
-  transition: height 0.9s var(--ease-out);
   /* Clip the canvas to the rounded corners in Safari. */
   isolation: isolate;
+}
+
+/* Animate only the hero <-> strip change, never viewport resizes (main.ts). */
+.main[data-morph] .stage {
+  transition: height 0.9s var(--ease-out);
 }
 
 /* Before the app boots, an inline script sets data-boot when resuming on a
@@ -276,10 +388,12 @@ textarea {
 }
 
 .main[data-hero] .content {
+  --pad-top: clamp(28px, 6vw, 80px);
+  --pad-x: clamp(24px, 6vw, 80px);
   grid-area: stage;
   z-index: 1;
   align-self: start;
-  padding: clamp(28px, 6vw, 80px) clamp(24px, 6vw, 80px) 0;
+  padding: var(--pad-top) var(--pad-x) 0;
   pointer-events: none;
 }
 
@@ -346,6 +460,43 @@ textarea {
   line-height: 1.02;
   letter-spacing: -0.045em;
   text-wrap: balance;
+}
+
+/* Over the painting: a blurred glaze of paper behind the text block calms the
+   brush strokes, and a tight glow separates each glyph from what is left. */
+.hero {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Reaches exactly to the stage edges (the content padding) and feathers out
+   there, so nothing spills onto the page or widens it. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--pad-top)) calc(-1 * var(--pad-x)) -40px;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 68%, transparent);
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent, #000 var(--pad-x) calc(100% - var(--pad-x)), transparent),
+    linear-gradient(transparent, #000 var(--pad-top) calc(100% - 40px), transparent);
+  mask-image:
+    linear-gradient(90deg, transparent, #000 var(--pad-x) calc(100% - var(--pad-x)), transparent),
+    linear-gradient(transparent, #000 var(--pad-top) calc(100% - 40px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
+.hero :is(.display, .lead, .quip, .recap) {
+  text-shadow:
+    0 0 2px color-mix(in srgb, var(--bg) 85%, transparent),
+    0 0 10px color-mix(in srgb, var(--bg) 70%, transparent),
+    0 0 24px color-mix(in srgb, var(--bg) 50%, transparent);
+}
+
+.hero :is(.lead, .quip, .recap) {
+  color: color-mix(in srgb, var(--ink) 80%, var(--muted));
 }
 
 .display em,

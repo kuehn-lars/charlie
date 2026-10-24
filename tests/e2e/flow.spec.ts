@@ -82,6 +82,7 @@ test('Nein escapes the mouse and never registers a click', async ({ page }, info
   const ja = page.getByRole('button', { name: t.question.yes, exact: true });
   const headline = page.getByRole('heading', { level: 1 });
   const viewport = page.viewportSize()!;
+  const stage = (await page.locator('.stage').boundingBox())!;
 
   for (let i = 0; i < 6; i++) {
     const before = (await nein.boundingBox())!;
@@ -95,10 +96,13 @@ test('Nein escapes the mouse and never registers a click', async ({ page }, info
 
     const after = (await nein.boundingBox())!;
     expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(100);
-    expect(after.x).toBeGreaterThanOrEqual(0);
-    expect(after.y).toBeGreaterThanOrEqual(0);
-    expect(after.x + after.width).toBeLessThanOrEqual(viewport.width);
-    expect(after.y + after.height).toBeLessThanOrEqual(viewport.height);
+    // Only ever inside the painting (and the viewport).
+    expect(after.x).toBeGreaterThanOrEqual(stage.x);
+    expect(after.y).toBeGreaterThanOrEqual(Math.max(0, stage.y));
+    expect(after.x + after.width).toBeLessThanOrEqual(stage.x + stage.width);
+    expect(after.y + after.height).toBeLessThanOrEqual(
+      Math.min(viewport.height, stage.y + stage.height),
+    );
     for (const other of [(await ja.boundingBox())!, (await headline.boundingBox())!]) {
       const overlap =
         after.x < other.x + other.width &&
@@ -116,26 +120,41 @@ test('Nein escapes the mouse and never registers a click', async ({ page }, info
   expect(await page.evaluate(() => window.__neinClicks)).toBe(0);
   expect(await step(page)).toBe('1');
   await expect(page.locator('.quip')).not.toBeEmpty();
-  const scale = await ja.evaluate((el) => Number(el.style.getPropertyValue('--scale')));
-  expect(scale).toBeGreaterThan(1);
+  const scale = () => ja.evaluate((el) => Number(el.style.getPropertyValue('--scale') || 1));
+  expect(await scale()).toBeGreaterThan(1);
+
+  // The count survives a reload (it goes into the email), Ja's size does not.
+  await page.reload();
+  await expect(ja).toBeVisible();
+  expect(await scale()).toBe(1);
+  const stored = await page.evaluate(() => localStorage.getItem('fuer-charlie:v1'));
+  expect((JSON.parse(stored ?? '{}') as { neinCount: number }).neinCount).toBeGreaterThan(0);
 });
 
-test('Nein disappears on touch without registering a click', async ({ page }, info) => {
+test('Nein jumps away on touch without registering a click', async ({ page }, info) => {
   test.skip(info.project.name !== 'webkit-iphone', 'touch behavior');
   await start(page, { dryRun: true });
   const nein = page.locator('[data-nein]');
-  const box = (await nein.boundingBox())!;
+  const stage = (await page.locator('.stage').boundingBox())!;
+  const before = (await nein.boundingBox())!;
   await nein.tap();
-  await expect(nein).toBeHidden();
-  // Tapping the spot again hits nothing.
-  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(600);
+  await expect(nein).toBeVisible();
+  const after = (await nein.boundingBox())!;
+  expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(50);
+  expect(after.x).toBeGreaterThanOrEqual(stage.x);
+  expect(after.y).toBeGreaterThanOrEqual(stage.y);
+  expect(after.x + after.width).toBeLessThanOrEqual(stage.x + stage.width);
+  expect(after.y + after.height).toBeLessThanOrEqual(stage.y + stage.height);
+  // Chasing it keeps failing.
+  await nein.tap();
   await page.waitForTimeout(600);
 
   expect(await page.evaluate(() => window.__neinClicks)).toBe(0);
   expect(await step(page)).toBe('1');
   await expect(page.locator('.quip')).not.toBeEmpty();
   const stored = await page.evaluate(() => localStorage.getItem('fuer-charlie:v1'));
-  expect(JSON.parse(stored ?? '{}')).toMatchObject({ neinCount: 1 });
+  expect(JSON.parse(stored ?? '{}')).toMatchObject({ neinCount: 2 });
 });
 
 test('blocked and past dates are not selectable', async ({ page }) => {
@@ -212,6 +231,23 @@ test('calendar is operable by keyboard', async ({ page }, info) => {
   await expect(cell).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('PageDown');
   await expect(page.locator(`[data-day="${addMonths(day!, 1)}"]`)).toBeFocused();
+});
+
+test('dark mode follows the system until switched, then sticks', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await start(page, { dryRun: true });
+  const html = page.locator('html');
+  const toggle = page.getByRole('switch', { name: t.darkMode });
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+  await toggle.click();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  const bg = [1, 3, 5].map((i) => parseInt(config.palette.bg.slice(i, i + 2), 16));
+  await expect(page.locator('body')).toHaveCSS('background-color', `rgb(${bg.join(', ')})`);
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
 });
 
 test('progress survives a reload', async ({ page }) => {
