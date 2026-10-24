@@ -239,8 +239,8 @@ const names = { her: 'Charlie', me: 'Lars', horse: 'Lewin' } as const;
 export const config: Config = {
   names,
   SITE_URL: 'https://kuehn-lars.github.io/charlie/',
-  WEB3FORMS_ACCESS_KEY: 'YOUR_ACCESS_KEY',
-  DRY_RUN: true,
+  WEB3FORMS_ACCESS_KEY: '221e5558-a00c-4ce2-afc7-7bdd8c9589f9',
+  DRY_RUN: false,
 
   // Golden hour: periwinkle sky melting into apricot, a ringed sun, lilac hills.
   palette: {
