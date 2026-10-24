@@ -1,8 +1,9 @@
 # Für Charlie
 
 A single-page date invitation: a dithered pixel-art meadow (Lewin the horse, a cat, a dog) above a
-four-step flow (question → when → what → note). Answers go to Lars' inbox via Web3Forms. Vanilla
-TypeScript, one canvas, no runtime dependencies. All visible copy is German and lives in
+four-step flow (question → when → what → note), in a light "golden hour" and a dark "starry night"
+theme. Answers go to Lars' inbox via Web3Forms. Vanilla TypeScript, one canvas, no runtime
+dependencies. All visible copy is German and lives in
 [`config.ts`](config.ts).
 
 ```sh
@@ -11,9 +12,9 @@ npm ci
 npm run dev        # http://localhost:5173/charlie/
 ```
 
-**Before sending the link:** replace the placeholder schedule in `config.ts` (marked
-`PLACEHOLDER`), set `WEB3FORMS_ACCESS_KEY`, set `DRY_RUN: false`, run `npm run og` if you changed
-palette or texts, then push to `main`.
+Live at <https://kuehn-lars.github.io/charlie/> with the real schedule and `DRY_RUN: false`. To
+change anything, edit `config.ts`, run `npm run og` if you changed the palette, horse colors or the
+question, then push to `main`.
 
 ![Step 1 on desktop: the question over the painted meadow](docs/desktop-question.png)
 
@@ -40,7 +41,7 @@ src/
   submit.ts               Web3Forms payload + POST (timeout, success semantics, DRY_RUN)
   validate-config.ts      dev-time config validation (console warnings)
   dom.ts                  10-line element factory
-  icons.ts                16x16 / 8x8 pixel icons rendered as SVG <rect> runs
+  icons.ts                16x16 / 8x8 pixel icons and the brand heart, rendered as SVG <rect> runs
   steps/
     common.ts             App context, step header/footer, *accent* markup
     question.ts, nein.ts  step 1 and the unpressable button
@@ -57,7 +58,7 @@ src/
     heart.ts              heart sprite and floating-heart particles
     fx.ts                 viewport overlay: "Nein" dissolve, "Ja" burst
     animals/              lewin.ts, cat.ts, dog.ts
-scripts/og.ts             renders public/og.png and public/apple-touch-icon.png
+scripts/og.ts             renders public/og.png (the question over the scene) and apple-touch-icon.png
 tests/unit, tests/e2e     Vitest and Playwright
 ```
 
@@ -79,6 +80,12 @@ height (CLS 0 on cold and resumed loads).
 choice or `prefers-color-scheme`, so dark mode never flashes light. Until the switch in the top
 bar is used, the page follows system changes live; afterwards the choice is stored. A change
 repaints the scene and FX canvases in the other palette.
+
+**Brand mark** (`GLYPHS.brand` in `icons.ts`): a 13×13 pixel heart framing the painting (sky,
+ringed sun behind hills, meadow). Its letters map to the palette's CSS variables, so it follows the
+theme. `public/favicon.svg` is the same grid with both palettes inlined and a
+`prefers-color-scheme` switch; it is kept in sync by hand, and `npm run og` renders the
+apple-touch-icon from it.
 
 ---
 
@@ -117,6 +124,8 @@ list (`sky`, `sun`, `meadow`, …) with an 8×8 Bayer threshold.
 
 Every pixel of the non-static layers is a **particle** (struct-of-arrays typed arrays): a spring-damper pulls
 it home, the pointer pushes it away within an 11 px radius. Settled particles cost one branch.
+The meadow is painted into the static layer too, so scattered blades part over grass. Under the
+sun the static layer is black at night and white by day, so the scatter opens a hole in the disc.
 
 ### Sprite format (`sprite.ts`)
 
@@ -333,7 +342,9 @@ vanished. Reaching step 5 removes the key, so a later visit starts fresh.
 3. Push to `main`. [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs typecheck,
    lint, unit tests and build, then `configure-pages` → `upload-pages-artifact` → `deploy-pages`.
    Actions are pinned to commit SHAs (tag in a comment); Node comes from `.nvmrc`.
-4. OG previews (iMessage, WhatsApp) cache aggressively; regenerate `og.png` before the first share.
+4. Link previews show `og.png` (the question with Ja / Nein over the scene) and the question as
+   `og:title`; the tab title stays `documentTitle`. Previews (iMessage, WhatsApp) cache
+   aggressively, so run `npm run og` before the first share.
 
 ## Known limitations
 
@@ -341,9 +352,8 @@ vanished. Reaching step 5 removes the key, so a later visit starts fresh.
   and its reasons. `noindex` keeps search engines away, nothing more.
 - No server: the only "backend" is Web3Forms; there is no confirmation email to Charlie and no
   dedupe if she completes the flow twice on two devices.
-- The cat follows x only (it lives on the meadow); pointer scatter needs a hovering pointer or a
-  touch drag over the stage.
-- Light theme only by design.
+- The cat follows x only (it lives on the meadow); pointer scatter needs a hovering pointer, a tap
+  or a touch drag over the stage.
 - Browsers without `image-rendering: pixelated` fall back to `crisp-edges` or smooth upscaling;
   still functional, less crisp.
 - The Nein dissolve rasterizes the label at one pixel per 3 CSS px; it reads as button bits, not
