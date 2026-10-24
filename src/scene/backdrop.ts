@@ -12,6 +12,8 @@ export interface BackdropColors {
   meadow: readonly Color[];
   blooms: readonly Color[];
   sparkles: readonly Color[];
+  /** Shows where the pointer scatters the sun: black at night, white by day. */
+  hole: Color;
 }
 
 export const backdropColors = (p: Palette): BackdropColors => ({
@@ -22,6 +24,7 @@ export const backdropColors = (p: Palette): BackdropColors => ({
   meadow: p.meadow.map((c) => rgba(c)),
   blooms: p.blooms.map((c) => rgba(c)),
   sparkles: p.sparkles.map((c) => rgba(c)),
+  hole: rgba(parseInt(p.bg.slice(1, 3), 16) > 0x80 ? '#FFFFFF' : '#000000'),
 });
 
 export interface Layout {
@@ -153,10 +156,12 @@ export function buildBackdrop(w: number, h: number, c: BackdropColors): Backdrop
         const depth = (y - top) / Math.max(1, h - top);
         const blade = (hash(x, Math.floor((y + (x & 3)) / 3)) - 0.5) * 0.45;
         const bloom = 0.015 + 0.05 * depth;
+        // Grass under the grass: scattered blades sway over meadow, not a hole.
+        base[y * w + x] = ramp(c.meadow, depth + blade, t);
         if (n < bloom) {
           add(x, y, c.blooms[Math.floor(hash(y, x) * c.blooms.length)]!);
           if (n < bloom * 0.25) tw.push(hx.length - 1);
-        } else add(x, y, ramp(c.meadow, depth + blade, t));
+        } else add(x, y, base[y * w + x]!);
         continue;
       }
 
@@ -175,6 +180,7 @@ export function buildBackdrop(w: number, h: number, c: BackdropColors): Backdrop
       const d = Math.sqrt(dx * dx + dy * dy);
       if (d <= r) {
         // Sun: concentric rings from core to rim with a painterly wobble.
+        base[y * w + x] = c.hole;
         const v = (d / r) ** 1.25 + 0.07 * Math.sin(Math.atan2(dy, dx) * 6 + d / 2.5);
         add(x, y, ramp(c.sun, v, t * 0.8 + n * 0.2));
         continue;

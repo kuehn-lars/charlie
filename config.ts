@@ -113,8 +113,6 @@ export interface HorseColors {
   points: Hex;
   blaze: Hex;
   muzzle: Hex;
-  /** Halter. Defaults to the accent if you like it matching. */
-  halter: Hex;
 }
 
 export interface Texts {
@@ -296,7 +294,6 @@ export const config: Config = {
     points: '#2A1D1A',
     blaze: '#F3ECE6',
     muzzle: '#3B2B27',
-    halter: '#FF4F7B',
   },
 
   // Real availability; visible on the live site. A highlight's `from` hides

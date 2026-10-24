@@ -18,12 +18,12 @@ import {
 } from '../sprite';
 
 /*
- * Lewin: bay, black points, long white blaze, rose halter. Facing right.
+ * Lewin: bay, black points, long white blaze. Facing right.
  * Body grids exclude legs and tail; both are generated so every gait and tail
  * position shares one drawing.
  *
  *   c coat   h highlight   s shade   k points (mane, tail, legs)
- *   w blaze  m muzzle      e eye     r halter
+ *   w blaze  m muzzle      e eye
  */
 const W = 40;
 const H = 30;
@@ -38,10 +38,10 @@ const STAND = [
   '.......................kkkkcccccccwwc...',
   '......................kkkcccccccccwwc...',
   '.....................kkkcccccccccccwwc..',
-  '.........chchc......kkkccccccccccccrwc..',
-  '.......hccccccchchckkkccccccccccccrcwwc.',
-  '.......chccccchchchckccccccccccccrcccwk.',
-  '......cccccccccccccccccccccccc..rccmmmm.',
+  '.........chchc......kkkccccccccccccwwc..',
+  '.......hccccccchchckkkccccccccccccccwwc.',
+  '.......chccccchchchckccccccccccccccccwk.',
+  '......cccccccccccccccccccccccc..cccmmmm.',
   '......hccccccccccccccccccccccc.....mmm..',
   '......cccccccccccccccccccccccc..........',
   '......scscscscscscscscscscscsc..........',
@@ -68,7 +68,7 @@ const GRAZE = [
   '...............................cccwwc...',
   '...............................cccwwc...',
   '................................ccwwc...',
-  '................................crrrr...',
+  '................................ccwwc...',
   '................................ccwwc...',
   '................................mmmwm...',
   '................................mmmmm...',
@@ -94,7 +94,7 @@ const CHEW = [
   '...............................cccwwc...',
   '...............................cccwwc...',
   '................................ccwwc...',
-  '................................crrrr...',
+  '................................ccwwc...',
   '................................ccwwc...',
   '................................mmmwm...',
   '................................mmmmm...',
@@ -135,7 +135,6 @@ export function createLewin(colors: HorseColors, x: number): Actor {
     w: colors.blaze,
     m: colors.muzzle,
     e: '#120C0B',
-    r: colors.halter,
   });
   const k = pal.k!;
 
