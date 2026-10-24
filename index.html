@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light" />
+    <!-- head:inject (title, description, Open Graph, Twitter, palette; see vite.config.ts) -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <span class="brand" id="brand"></span>
+        <div class="progress" id="progress" aria-hidden="true"></div>
+      </header>
+      <main class="main" id="main" data-step="1">
+        <section class="stage" aria-hidden="true">
+          <canvas class="scene" id="scene" hidden></canvas>
+        </section>
+        <div class="content" id="content"></div>
+      </main>
+    </div>
+    <p class="sr-only" id="announcer" aria-live="polite"></p>
+    <canvas class="fx" id="fx" aria-hidden="true" hidden></canvas>
+    <noscript><p class="noscript">Diese Seite braucht JavaScript.</p></noscript>
+  </body>
+</html>
