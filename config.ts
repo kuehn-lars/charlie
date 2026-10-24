@@ -38,8 +38,10 @@ export interface BlockedRange {
 
 export interface HighlightedDay {
   date: string;
-  /** Short label, e.g. "Lars hat frei". */
+  /** Short label, e.g. "Lars hat ab 17:30 Zeit". Shown above the day's time chips. */
   label: string;
+  /** Earliest time Lars is free ('HH:MM'): earlier chips and custom times are not offered. */
+  from?: string;
 }
 
 /** Built-in 16x16 pixel icons. See `src/icons.ts`. */
@@ -155,6 +157,7 @@ export interface Texts {
     slotsEmpty: string;
     remove: (slotLabel: string) => string;
     blockedFallbackReason: string;
+    highlightLegend: string;
     pastTime: string;
   };
   what: {
@@ -296,21 +299,21 @@ export const config: Config = {
     halter: '#FF4F7B',
   },
 
-  // -------------------------------------------------------------------------
-  // PLACEHOLDER SCHEDULE: made-up dates for testing, NOT real availability.
-  // Replace blockedDates, highlightedDates and blockedWeekdays with real
-  // values before sending the link. (Visible on the live site either way.)
-  // -------------------------------------------------------------------------
+  // Real availability; visible on the live site. A highlight's `from` hides
+  // that day's earlier time chips and rejects earlier custom times.
   blockedDates: [
-    { from: '2026-11-13', to: '2026-11-15', reason: 'Platzhalter: Lars ist verreist' }, // PLACEHOLDER
-    { date: '2026-11-21', reason: 'Platzhalter: Lars ist schon verplant' }, // PLACEHOLDER
+    { date: '2026-10-24', reason: 'Lars ist schon verplant' },
+    { from: '2026-10-30', to: '2026-10-31', reason: 'Lars ist schon verplant' },
   ],
   highlightedDates: [
-    { date: '2026-10-31', label: 'Lars hat frei' }, // PLACEHOLDER
-    { date: '2026-11-07', label: 'Lars hat frei' }, // PLACEHOLDER
+    { date: '2026-10-25', label: 'Lars hat ab 13:00 Zeit', from: '13:00' },
+    { date: '2026-10-26', label: 'Lars hat ab 17:30 Zeit', from: '17:30' },
+    { date: '2026-10-27', label: 'Lars hat ab 17:30 Zeit', from: '17:30' },
+    { date: '2026-10-28', label: 'Lars hat ab 17:30 Zeit', from: '17:30' },
+    { date: '2026-10-29', label: 'Lars hat ab 17:30 Zeit', from: '17:30' },
   ],
-  blockedWeekdays: [], // PLACEHOLDER
-  timePresets: ['12:00', '15:00', '18:00', '19:30'],
+  blockedWeekdays: [],
+  timePresets: ['12:00', '14:00', '16:00', '18:00', '20:00'],
   maxSlots: 6,
 
   activities: [
@@ -385,6 +388,7 @@ export const config: Config = {
       slotsEmpty: 'Noch keine Termine gewählt.',
       remove: (slot) => `${slot} entfernen`,
       blockedFallbackReason: 'Nicht verfügbar',
+      highlightLegend: 'Lars hat Zeit',
       pastTime: 'Diese Uhrzeit ist heute schon vorbei.',
     },
     what: {

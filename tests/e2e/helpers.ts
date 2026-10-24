@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { config } from '../../config';
 import { addDays, todayIn } from '../../src/dates';
-import { bounds, dayStatus } from '../../src/schedule';
+import { bounds, dayStatus, dayTimes } from '../../src/schedule';
 
 /*
  * Tests derive their dates from config.ts and the real clock, so they keep
@@ -40,7 +40,7 @@ export function firstBlockedDay(): { day: string; reason: string } | null {
   return null;
 }
 
-export const presets = config.timePresets;
+export const times = (day: string) => dayTimes(config, day);
 
 /**
  * Opens the site with DRY_RUN forced on or off (e2e builds only) and a
@@ -93,7 +93,7 @@ export async function next(page: Page) {
 export async function reachNote(page: Page) {
   await sayYes(page);
   const [day] = selectableDays(1);
-  await addSlot(page, day!, presets[0]!);
+  await addSlot(page, day!, times(day!)[0]!);
   await next(page);
   await page.getByText(config.activities[0]!.title, { exact: true }).click();
   await next(page);

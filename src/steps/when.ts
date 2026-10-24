@@ -6,6 +6,8 @@ import {
   addSlot,
   bounds,
   dayStatus,
+  dayTimes,
+  freeFrom,
   hasSlot,
   isPastTime,
   removeSlot,
@@ -84,7 +86,8 @@ export function whenStep(app: App): View {
     const own = slots()
       .filter((s) => s.date === day)
       .map((s) => s.time);
-    const times = [...new Set([...config.timePresets, ...own])].sort();
+    const times = [...new Set([...dayTimes(config, day), ...own])].sort();
+    const from = freeFrom(config, day);
     const chips = times.map((time) => {
       const slot = { date: day, time };
       const past = isPastTime(slot, now);
@@ -126,6 +129,7 @@ export function whenStep(app: App): View {
       class: 'input',
       type: 'time',
       step: 300,
+      min: from ?? null,
       required: true,
     });
     const add = h('button', { type: 'submit', class: 'btn btn-secondary' }, t.add);
@@ -140,6 +144,10 @@ export function whenStep(app: App): View {
           const time = input.value.slice(0, 5);
           if (!isTime(time)) return;
           const slot = { date: day, time };
+          if (from && time < from && status.kind === 'available') {
+            msg.textContent = status.label ?? '';
+            return;
+          }
           if (isPastTime(slot, now)) {
             msg.textContent = t.pastTime;
             return;

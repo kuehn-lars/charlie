@@ -58,6 +58,8 @@ export function validateConfig(cfg: Config, today: string): string[] {
       warn(`${where}: ${h.date} is both highlighted and blocked. Blocked wins.`);
     }
     if (!h.label.trim()) warn(`${where}: label is empty.`);
+    if (h.from !== undefined && !isTime(h.from))
+      warn(`${where}.from: "${h.from}" is not HH:MM (24h).`);
   });
 
   const seenTimes = new Set<string>();

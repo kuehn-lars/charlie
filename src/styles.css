@@ -828,7 +828,6 @@ h2:focus {
 
 .day[data-highlight] {
   color: var(--rose-ink);
-  background: color-mix(in srgb, var(--blush) 30%, transparent);
 }
 
 .day[data-has-slots]::after {
@@ -901,8 +900,8 @@ h2:focus {
 }
 
 .legend .lg-highlight {
-  background: color-mix(in srgb, var(--blush) 45%, transparent);
-  border-color: color-mix(in srgb, var(--rose) 40%, transparent);
+  background: var(--rose-ink);
+  border-color: transparent;
 }
 
 .legend .lg-blocked {
@@ -1479,9 +1478,11 @@ h2:focus {
 }
 
 @media (min-width: 768px) {
+  /* Rail to rail, inside the 1px frame lines, so the top border meets them. */
   .step-foot {
-    margin: auto -48px calc((var(--gutter) + env(safe-area-inset-bottom)) * -1);
-    padding: 16px 48px calc(16px + env(safe-area-inset-bottom));
+    margin: auto calc(-47px - var(--gutter))
+      calc((var(--gutter) + env(safe-area-inset-bottom)) * -1);
+    padding: 16px calc(47px + var(--gutter)) calc(16px + env(safe-area-inset-bottom));
   }
 }
 

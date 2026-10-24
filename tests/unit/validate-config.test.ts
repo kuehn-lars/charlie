@@ -66,6 +66,9 @@ describe('validateConfig', () => {
 
   it('flags bad presets, weekdays, max slots, activities, URL and colors', () => {
     expect(warningsFor({ timePresets: ['19:30', '25:00', '19:30'] })).toHaveLength(2);
+    expect(
+      warningsFor({ highlightedDates: [{ date: '2026-10-31', label: 'x', from: '5pm' }] }),
+    ).toEqual(['highlightedDates[0].from: "5pm" is not HH:MM (24h).']);
     expect(warningsFor({ blockedWeekdays: [0] })[0]).toMatch(/not an ISO weekday/);
     expect(warningsFor({ maxSlots: 0 })[0]).toMatch(/maxSlots/);
     const dup = valid.activities[0]!;

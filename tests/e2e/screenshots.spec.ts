@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { config } from '../../config';
-import { addSlot, next, presets, sayYes, selectableDays, start } from './helpers';
+import { addSlot, next, sayYes, times, selectableDays, start } from './helpers';
 
 /*
  * Visual review aid, not an assertion suite: captures every step per project
@@ -31,9 +31,9 @@ test('every step', async ({ page }, info) => {
   await page.waitForTimeout(900);
   await shot('2-when-empty');
   const [d1, d2] = selectableDays(2);
-  await addSlot(page, d1!, presets[0]!);
-  await addSlot(page, d1!, presets[2]!);
-  await addSlot(page, d2!, presets[3]!);
+  await addSlot(page, d1!, times(d1!)[0]!);
+  await addSlot(page, d1!, times(d1!)[2]!);
+  await addSlot(page, d2!, times(d2!).at(-1)!);
   await shot('2-when');
 
   await next(page);

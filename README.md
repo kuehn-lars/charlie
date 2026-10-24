@@ -23,8 +23,6 @@ palette or texts, then push to `main`.
   <img src="docs/iphone-5-done.png" width="32%" alt="Success screen on iPhone">
 </p>
 
-Screenshots come from `SCREENSHOTS=1 npm run test:e2e -- screenshots` (`test-results/screens/`).
-
 ---
 
 ## Architecture
@@ -221,24 +219,24 @@ Each escape increments `neinCount` (persisted, reported in the email) and scales
 
 ## config.ts reference
 
-| Key                          | Type                                                         | Purpose                                                                                      |
-| ---------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `names.her` / `me` / `horse` | string                                                       | Used in texts.                                                                               |
-| `SITE_URL`                   | absolute URL, trailing `/`                                   | OG/Twitter absolute URLs; its **path is the Vite `base`** (must be `/<repo>/`).              |
-| `WEB3FORMS_ACCESS_KEY`       | string                                                       | Public by design. Placeholder `YOUR_ACCESS_KEY`.                                             |
-| `DRY_RUN`                    | boolean                                                      | Log the payload to the console instead of sending.                                           |
-| `palette` / `paletteDark`    | `Palette`                                                    | Light / dark UI + scene colors, injected as CSS custom properties (`--rose-ink`, `--sky-0`). |
-| `horse`                      | `HorseColors`                                                | Lewin's coat, highlight, shade, points, blaze, muzzle, halter.                               |
-| `minDate` / `maxDate`        | `'YYYY-MM-DD'`?                                              | Default today / today + 3 months. `minDate` never undercuts today.                           |
-| `blockedDates`               | `{date, reason?}` \| `{from, to, reason?}`                   | Inclusive ranges; hatched, focusable, reason shown on hover/focus/tap.                       |
-| `highlightedDates`           | `{date, label}`                                              | Accent styling, label in the panel and legend.                                               |
-| `blockedWeekdays`            | ISO weekday numbers (1 = Mon)                                | Never selectable.                                                                            |
-| `timePresets`                | `'HH:MM'[]`                                                  | Chips per day; plus "Andere Uhrzeit" (custom input, 5 min steps).                            |
-| `maxSlots`                   | positive int                                                 | Max date+time proposals.                                                                     |
-| `activities`                 | `Activity[]`                                                 | `{ id, title, description, icon, recommended?, badge? }`. Ids are persisted: never reuse.    |
-| `activities[].icon`          | `'pot' \| 'sushi' \| 'bowling' \| 'dice' \| 'heart'` or rows | Custom icon: 16 rows of `#` ink, `+` accent, `o` blush, `.` transparent.                     |
-| `allowMultiple`              | boolean                                                      | Radio vs. checkbox cards.                                                                    |
-| `texts`                      | `Texts`                                                      | Every visible string. `*word*` renders a word in the accent color (headlines).               |
+| Key                          | Type                                                         | Purpose                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `names.her` / `me` / `horse` | string                                                       | Used in texts.                                                                                                     |
+| `SITE_URL`                   | absolute URL, trailing `/`                                   | OG/Twitter absolute URLs; its **path is the Vite `base`** (must be `/<repo>/`).                                    |
+| `WEB3FORMS_ACCESS_KEY`       | string                                                       | Public by design. Placeholder `YOUR_ACCESS_KEY`.                                                                   |
+| `DRY_RUN`                    | boolean                                                      | Log the payload to the console instead of sending.                                                                 |
+| `palette` / `paletteDark`    | `Palette`                                                    | Light / dark UI + scene colors, injected as CSS custom properties (`--rose-ink`, `--sky-0`).                       |
+| `horse`                      | `HorseColors`                                                | Lewin's coat, highlight, shade, points, blaze, muzzle, halter.                                                     |
+| `minDate` / `maxDate`        | `'YYYY-MM-DD'`?                                              | Default today / today + 3 months. `minDate` never undercuts today.                                                 |
+| `blockedDates`               | `{date, reason?}` \| `{from, to, reason?}`                   | Inclusive ranges; hatched, focusable, reason shown on hover/focus/tap.                                             |
+| `highlightedDates`           | `{date, label, from?}`                                       | Accent styling, label above the day's chips. `from` (`'HH:MM'`): earlier presets and custom times are not offered. |
+| `blockedWeekdays`            | ISO weekday numbers (1 = Mon)                                | Never selectable.                                                                                                  |
+| `timePresets`                | `'HH:MM'[]`                                                  | Chips per day (from a highlight's `from` on); plus "Andere Uhrzeit" (custom input, 5 min steps).                   |
+| `maxSlots`                   | positive int                                                 | Max date+time proposals.                                                                                           |
+| `activities`                 | `Activity[]`                                                 | `{ id, title, description, icon, recommended?, badge? }`. Ids are persisted: never reuse.                          |
+| `activities[].icon`          | `'pot' \| 'sushi' \| 'bowling' \| 'dice' \| 'heart'` or rows | Custom icon: 16 rows of `#` ink, `+` accent, `o` blush, `.` transparent.                                           |
+| `allowMultiple`              | boolean                                                      | Radio vs. checkbox cards.                                                                                          |
+| `texts`                      | `Texts`                                                      | Every visible string. `*word*` renders a word in the accent color (headlines).                                     |
 
 `validateConfig` (dev only, console `[config]` warnings, unit-tested) flags: invalid dates, inverted
 ranges, min > max, days both blocked and highlighted (blocked wins), duplicate highlights, bad

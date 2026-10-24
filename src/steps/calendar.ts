@@ -202,9 +202,8 @@ export function createCalendar(o: CalendarOptions): Calendar {
 
   render();
 
-  const legendItems = new Set(
-    config.highlightedDates.filter((d) => d.date >= o.min && d.date <= o.max).map((d) => d.label),
-  );
+  // One entry for all highlights; each day's own label sits above its time chips.
+  const anyHighlight = config.highlightedDates.some((d) => d.date >= o.min && d.date <= o.max);
 
   const el = h(
     'div',
@@ -230,7 +229,7 @@ export function createCalendar(o: CalendarOptions): Calendar {
     h(
       'p',
       { class: 'legend', 'aria-hidden': 'true' },
-      ...[...legendItems].map((label) => h('span', null, h('i', { class: 'lg-highlight' }), label)),
+      anyHighlight ? h('span', null, h('i', { class: 'lg-highlight' }), t.highlightLegend) : null,
       h('span', null, h('i', { class: 'lg-blocked' }), t.blockedFallbackReason),
       h('span', null, h('i', { class: 'lg-slot' }), t.slotsTitle),
     ),

@@ -15,6 +15,7 @@ type ScheduleConfig = Pick<
   Config,
   'minDate' | 'maxDate' | 'blockedDates' | 'highlightedDates' | 'blockedWeekdays'
 >;
+type TimesConfig = Pick<Config, 'highlightedDates' | 'timePresets'>;
 
 export const isRange = (b: BlockedDay | BlockedRange): b is BlockedRange => 'from' in b;
 
@@ -40,6 +41,16 @@ export function dayStatus(cfg: ScheduleConfig, today: string, day: string): DayS
 
 export const isSelectable = (cfg: ScheduleConfig, today: string, day: string): boolean =>
   dayStatus(cfg, today, day).kind === 'available';
+
+/** Earliest time Lars is free on a day, if its highlight sets one. */
+export const freeFrom = (cfg: Pick<Config, 'highlightedDates'>, day: string): string | undefined =>
+  cfg.highlightedDates.find((h) => h.date === day)?.from;
+
+/** Time chips for a day: the presets from the earliest time Lars is free on. */
+export function dayTimes(cfg: TimesConfig, day: string): string[] {
+  const from = freeFrom(cfg, day) ?? '';
+  return cfg.timePresets.filter((t) => t >= from);
+}
 
 /** A time on today's date that has already passed (Berlin) is not offered. */
 export function isPastTime(slot: Slot, now: Date): boolean {
@@ -81,6 +92,7 @@ export function sanitizeSlots(
       typeof (s as Slot).time === 'string' &&
       isTime((s as Slot).time) &&
       isSelectable(cfg, today, (s as Slot).date) &&
+      (s as Slot).time >= (freeFrom(cfg, (s as Slot).date) ?? '') &&
       !isPastTime(s as Slot, now),
   );
   const unique = valid.filter((s, i) => valid.findIndex((o) => slotKey(o) === slotKey(s)) === i);

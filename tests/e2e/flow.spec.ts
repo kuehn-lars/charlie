@@ -5,7 +5,7 @@ import {
   addSlot,
   firstBlockedDay,
   next,
-  presets,
+  times,
   reachNote,
   sayYes,
   selectableDays,
@@ -36,9 +36,9 @@ test('happy path with DRY_RUN sends nothing and logs the payload', async ({ page
   await sayYes(page);
 
   const [d1, d2] = selectableDays(2);
-  await addSlot(page, d1!, presets[0]!);
-  await addSlot(page, d1!, presets[1]!);
-  await addSlot(page, d2!, presets[0]!);
+  await addSlot(page, d1!, times(d1!)[0]!);
+  await addSlot(page, d1!, times(d1!)[1]!);
+  await addSlot(page, d2!, times(d2!)[0]!);
   await next(page);
 
   const pick = config.activities.find((a) => a.recommended) ?? config.activities[0]!;
@@ -63,9 +63,9 @@ test('happy path with DRY_RUN sends nothing and logs the payload', async ({ page
   });
   const message = payload.message as string;
   for (const [d, time] of [
-    [d1!, presets[0]!],
-    [d1!, presets[1]!],
-    [d2!, presets[0]!],
+    [d1!, times(d1!)[0]!],
+    [d1!, times(d1!)[1]!],
+    [d2!, times(d2!)[0]!],
   ] as const) {
     expect(message).toContain(formatSlotLong(d, time));
   }
@@ -184,16 +184,16 @@ test('multiple slots, including several on the same day', async ({ page }) => {
   await start(page, { dryRun: true });
   await sayYes(page);
   const [d1, d2] = selectableDays(2);
-  await addSlot(page, d2!, presets[0]!);
-  await addSlot(page, d1!, presets[1]!);
-  await addSlot(page, d1!, presets[0]!);
+  await addSlot(page, d2!, times(d2!)[0]!);
+  await addSlot(page, d1!, times(d1!)[1]!);
+  await addSlot(page, d1!, times(d1!)[0]!);
 
   const slots = page.locator('.slot');
   await expect(slots).toHaveCount(3);
   const expected = [
-    [d1!, presets[0]!],
-    [d1!, presets[1]!],
-    [d2!, presets[0]!],
+    [d1!, times(d1!)[0]!],
+    [d1!, times(d1!)[1]!],
+    [d2!, times(d2!)[0]!],
   ].map(([d, time]) => formatSlotShort(d!, time!));
   for (const [i, label] of expected.entries()) {
     await expect(slots.nth(i).getByRole('button')).toHaveAccessibleName(t.when.remove(label));
@@ -254,7 +254,7 @@ test('progress survives a reload', async ({ page }) => {
   await start(page, { dryRun: true });
   await sayYes(page);
   const [day] = selectableDays(1);
-  await addSlot(page, day!, presets[0]!);
+  await addSlot(page, day!, times(day!)[0]!);
   await next(page);
   const pick = config.activities[1] ?? config.activities[0]!;
   await page.getByText(pick.title, { exact: true }).click();

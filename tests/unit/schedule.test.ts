@@ -3,6 +3,7 @@ import {
   addSlot,
   bounds,
   dayStatus,
+  dayTimes,
   isPastTime,
   removeSlot,
   sanitizeSlots,
@@ -88,5 +89,34 @@ describe('slots', () => {
       5,
     );
     expect(restored).toEqual([c, a]);
+  });
+
+  it('drops restored slots before the time Lars is free', () => {
+    const late = { ...cfg, highlightedDates: [{ date: '2026-10-31', label: 'x', from: '17:30' }] };
+    const now = new Date('2026-10-24T08:00:00Z');
+    const slots = [
+      { date: '2026-10-31', time: '12:00' },
+      { date: '2026-10-31', time: '17:30' },
+    ];
+    expect(sanitizeSlots(late, now, slots, 5)).toEqual([slots[1]]);
+  });
+});
+
+describe('dayTimes', () => {
+  const presets = ['12:00', '14:00', '16:00', '18:00', '20:00'];
+  const times = {
+    highlightedDates: [{ date: '2026-10-26', label: 'x', from: '17:30' }],
+    timePresets: presets,
+  };
+  it('offers the presets on days without a start time', () => {
+    expect(dayTimes(times, '2026-10-25')).toEqual(presets);
+  });
+  it('drops presets before the earliest free time', () => {
+    expect(dayTimes(times, '2026-10-26')).toEqual(['18:00', '20:00']);
+    const exact = {
+      ...times,
+      highlightedDates: [{ date: '2026-10-26', label: 'x', from: '18:00' }],
+    };
+    expect(dayTimes(exact, '2026-10-26')).toEqual(['18:00', '20:00']);
   });
 });
