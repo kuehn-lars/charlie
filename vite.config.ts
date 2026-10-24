@@ -24,6 +24,8 @@ const cssVars = (palette: Palette) =>
 function headInject(): Plugin {
   const { texts, palette, paletteDark, SITE_URL } = config;
   const ogImage = new URL('og.png', SITE_URL).href;
+  // Link previews show the question, like og.png; the tab keeps the short title.
+  const shareTitle = texts.question.headline.replace(/\*/g, '');
   const meta = (attrs: Record<string, string>): HtmlTagDescriptor => ({
     tag: 'meta',
     attrs,
@@ -41,14 +43,14 @@ function headInject(): Plugin {
           meta({ property: 'og:type', content: 'website' }),
           meta({ property: 'og:locale', content: 'de_DE' }),
           meta({ property: 'og:url', content: SITE_URL }),
-          meta({ property: 'og:title', content: texts.documentTitle }),
+          meta({ property: 'og:title', content: shareTitle }),
           meta({ property: 'og:description', content: texts.shareDescription }),
           meta({ property: 'og:image', content: ogImage }),
           meta({ property: 'og:image:width', content: '1200' }),
           meta({ property: 'og:image:height', content: '630' }),
-          meta({ property: 'og:image:alt', content: texts.documentTitle }),
+          meta({ property: 'og:image:alt', content: shareTitle }),
           meta({ name: 'twitter:card', content: 'summary_large_image' }),
-          meta({ name: 'twitter:title', content: texts.documentTitle }),
+          meta({ name: 'twitter:title', content: shareTitle }),
           meta({ name: 'twitter:description', content: texts.shareDescription }),
           meta({ name: 'twitter:image', content: ogImage }),
           {

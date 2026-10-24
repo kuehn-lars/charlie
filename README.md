@@ -201,8 +201,8 @@ input):
 - **Mouse**: on `pointermove` within 100 px (and nearer to Nein than to Ja, so reaching for Ja
   never counts), it is re-parented to `<body>` (so `position: fixed` is viewport-relative inside
   animated ancestors) and jumps via `translate` to a spot from `pickSpot`: inside the painting
-  (the stage, clipped to the viewport) with a 16 px margin, not overlapping Ja, the headline, the
-  eyebrow or the quip (inflated 12 px), ≥ 220 px from the
+  (the stage, clipped to the viewport) with a 16 px margin, not overlapping Ja, the headline or
+  the quip (inflated 12 px), ≥ 220 px from the
   cursor when possible. It is click-through during the 350 ms flight; a cooldown counts one
   attempt per approach.
 - **Touch / pen**: `pointerdown` → `preventDefault`, a puff of pixels stays behind and the button

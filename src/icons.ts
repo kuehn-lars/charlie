@@ -98,19 +98,53 @@ const ICONS: Record<IconName, CustomIcon> = {
   ],
 };
 
-/** Small UI glyphs on an 8x8 grid (heart 7x6), same format. */
+/** Small UI glyphs on an 8x8 grid (brand mark 13x13), same format. */
 // prettier-ignore
 export const GLYPHS = {
   left: ['........', '....##..', '...##...', '..##....', '..##....', '...##...', '....##..', '........'],
   right: ['........', '..##....', '...##...', '....##..', '....##..', '...##...', '..##....', '........'],
   close: ['........', '.#....#.', '..#..#..', '...##...', '...##...', '..#..#..', '.#....#.', '........'],
   arrow: ['........', '....#...', '.....#..', '########', '.....#..', '....#...', '........', '........'],
-  heart: ['.++.++.', '+oo++++', '+o+++++', '.+++++.', '..+++..', '...+...'],
+  /** Brand mark: the painting seen through a heart, in the current theme's colors. */
+  brand: [
+    '..kkk...kkk..',
+    '.kaaak.kaaak.',
+    'ka**aakaavaak',
+    'ka*aaaaaaaaak',
+    'kbbbbbbrrrbbk',
+    'kcccccruyurck',
+    'kccccruyyyurk',
+    '.kllllluyulk.',
+    '..kggLLLggk..',
+    '...kgfgggk...',
+    '....kdddk....',
+    '.....kdk.....',
+    '......k......',
+  ],
   sun: ['...##...', '.#....#.', '..####..', '#.####.#', '#.####.#', '..####..', '.#....#.', '...##...'],
   moon: ['..####..', '.###....', '###.....', '###.....', '###.....', '###...+.', '.###....', '..####..'],
 } satisfies Record<string, CustomIcon>;
 
-const FILL: Record<string, string> = { '#': 'currentColor', '+': 'var(--rose)', o: 'var(--blush)' };
+const FILL: Record<string, string> = {
+  '#': 'currentColor',
+  '+': 'var(--rose)',
+  o: 'var(--blush)',
+  // Painting colors, for the brand mark.
+  k: 'var(--rose-ink)',
+  a: 'var(--sky-0)',
+  b: 'var(--sky-2)',
+  c: 'var(--sky-4)',
+  y: 'var(--sun-1)',
+  u: 'var(--sun-3)',
+  r: 'var(--sun-4)',
+  l: 'var(--hills-0)',
+  L: 'var(--hills-1)',
+  g: 'var(--meadow-1)',
+  d: 'var(--meadow-3)',
+  f: 'var(--blooms-1)',
+  '*': 'var(--sparkles-0)',
+  v: 'var(--sparkles-1)',
+};
 
 /** Builds an SVG with one <rect> per horizontal run of same-colored pixels. */
 export function pixelIcon(icon: IconName | CustomIcon, size: number): SVGSVGElement {

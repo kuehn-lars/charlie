@@ -95,23 +95,25 @@ const ogHtml = `<!doctype html><meta charset="utf-8"><style>${css}
 .og { position: relative; width: ${W}px; height: ${H}px; overflow: hidden; }
 .frame { position: absolute; inset: ${INSET}px; overflow: hidden; border: 2px solid ${config.palette.border}; border-radius: 28px; }
 .frame img { position: absolute; left: -2px; bottom: -2px; width: ${FW}px; height: ${Math.ceil(FH / PIXEL) * PIXEL}px; }
-.copy { position: absolute; left: 84px; top: 92px; }
-.pill { display: inline-block; padding: 10px 18px; border: 2px solid ${config.palette.rose}88; border-radius: 999px;
-  font: 500 22px/1 'Geist Mono'; color: ${config.palette.roseInk}; background: ${config.palette.bg}cc; }
-h1 { margin: 34px 0 0; font: 500 124px/0.98 Geist; letter-spacing: -0.05em; color: ${config.palette.ink}; }
+.copy { position: absolute; left: 84px; top: 96px; }
+h1 { margin: 0; max-width: 800px; font: 500 82px/1.02 Geist; letter-spacing: -0.045em; color: ${config.palette.ink}; }
+.btns { display: flex; gap: 16px; margin-top: 40px; }
+.btn { display: grid; place-items: center; height: 72px; padding: 0 44px; border-radius: 999px; font: 500 25px/1 Geist; }
+.yes { background: ${config.palette.roseInk}; color: ${config.palette.onAccent}; }
+.no { background: ${config.palette.surface}; color: ${config.palette.ink}; border: 2px solid ${config.palette.border}; }
 </style>
 <div class="og">
   <div class="frame"><img src="${sceneDataUrl()}" alt=""></div>
   <div class="copy">
-    <span class="pill">${config.texts.question.eyebrow}</span>
-    <h1>${accent(config.texts.documentTitle.replace(config.names.her, `*${config.names.her}*`))}</h1>
+    <h1>${accent(config.texts.question.headline)}</h1>
+    <div class="btns"><span class="btn yes">${config.texts.question.yes}</span><span class="btn no">${config.texts.question.no}</span></div>
   </div>
 </div>`;
 
 const iconHtml = `<!doctype html><meta charset="utf-8"><style>${css}
 .icon { width: 180px; height: 180px; display: grid; place-items: center; background: ${config.palette.bg}; }
 </style>
-<div class="icon"><img src="data:image/svg+xml;base64,${readFileSync(new URL('../public/favicon.svg', import.meta.url)).toString('base64')}" width="126" height="112" alt=""></div>`;
+<div class="icon"><img src="data:image/svg+xml;base64,${readFileSync(new URL('../public/favicon.svg', import.meta.url)).toString('base64')}" width="126" height="126" alt=""></div>`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ deviceScaleFactor: 1 });

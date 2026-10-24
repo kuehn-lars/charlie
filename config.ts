@@ -129,7 +129,6 @@ export interface Texts {
 
   question: {
     title: string;
-    eyebrow: string;
     /** Wrap a word in *asterisks* to set it in the accent color. */
     headline: string;
     yes: string;
@@ -354,7 +353,6 @@ export const config: Config = {
 
     question: {
       title: 'Die Frage',
-      eyebrow: 'Eine Frage von Lars',
       headline: `${names.her}, gehst du mit mir auf ein *Date*?`,
       yes: 'Ja',
       no: 'Nein',

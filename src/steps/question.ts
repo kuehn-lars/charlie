@@ -10,7 +10,6 @@ export function questionStep(app: App): View {
   const t = config.texts.question;
   const headline = h('h1', { class: 'display', tabindex: -1 }, accent(t.headline));
   const quip = h('p', { class: 'quip', 'aria-live': 'polite' });
-  const eyebrow = h('p', { class: 'eyebrow' }, t.eyebrow);
   const yes = h('button', { type: 'button', class: 'btn btn-primary btn-lg btn-yes' }, t.yes);
   const no = h(
     'button',
@@ -24,7 +23,7 @@ export function questionStep(app: App): View {
   const detach = attachNein({
     button: no,
     area: () => document.querySelector('.stage')!,
-    protect: () => [yes, headline, eyebrow, quip],
+    protect: () => [yes, headline, quip],
     focusTarget: () => yes,
     reducedMotion: app.reducedMotion,
     dissolve: (el) => app.fx?.dissolve(el),
@@ -54,7 +53,6 @@ export function questionStep(app: App): View {
   const el = h(
     'div',
     { class: 'step hero' },
-    eyebrow,
     headline,
     h('div', { class: 'answer' }, yes, no),
     quip,

@@ -76,7 +76,7 @@ const app: App = {
   },
 };
 
-byId('brand').append(pixelIcon(GLYPHS.heart, 14), config.texts.brand);
+byId('brand').append(pixelIcon(GLYPHS.brand, 26), config.texts.brand);
 
 const themeSwitch = byId('theme-switch');
 themeSwitch.setAttribute('aria-label', config.texts.darkMode);
